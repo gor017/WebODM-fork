@@ -175,11 +175,7 @@ export default class MeasurePopup extends React.Component {
     this.lastUnitSystem = getUnitSystem();
 
     const baseMethods = [
-      {label: _("Triangulate"), method: 'triangulate'},
-      {label: _("Plane"), method: 'plane'},
-      {label: _("Average"), method: 'average'},
-      {label: _("Highest"), method: 'highest'},
-      {label: _("Lowest"), method: 'lowest'}];
+      {label: _("Triangulate"), method: 'triangulate'}];
 
     return (<div className="plugin-measure popup">
         {featureType == "Polygon" && <p>{_("Perimeter:")} {this.props.model.lengthDisplay}</p>}
