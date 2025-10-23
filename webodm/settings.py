@@ -409,6 +409,8 @@ AUTO_LOGIN_USER = None
 # Link to GCP docs
 GCP_DOCS_LINK = "https://docs.opendronemap.org/gcp/#gcp-file-format"
 
+CSRF_TRUSTED_ORIGINS = ["https://lic.trimetari.com", "https://www.lic.trimetari.com"]
+
 # Link to general docs
 DOCS_LINK = "https://docs.opendronemap.org"
 
