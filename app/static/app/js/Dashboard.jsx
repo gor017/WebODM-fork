@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import './css/Dashboard.scss';
 import ProjectList from './components/ProjectList';
 import EditProjectDialog from './components/EditProjectDialog';
+import LASConversionPanel from './components/LASConversionPanel';
 import Utils from './classes/Utils';
 import {
   BrowserRouter as Router,
@@ -22,8 +23,22 @@ class Dashboard extends React.Component {
   constructor(props){
     super(props);
 
+    this.state = {
+      showLASConversion: false
+    };
+
     this.handleAddProject = this.handleAddProject.bind(this);
     this.addNewProject = this.addNewProject.bind(this);
+    this.handleConvertLAS = this.handleConvertLAS.bind(this);
+    this.handleCloseLASConversion = this.handleCloseLASConversion.bind(this);
+  }
+
+  handleConvertLAS(){
+    this.setState({showLASConversion: true});
+  }
+
+  handleCloseLASConversion(){
+    this.setState({showLASConversion: false});
   }
 
   handleAddProject(){
@@ -66,15 +81,34 @@ class Dashboard extends React.Component {
     return (
       <Router basename="/dashboard">
         <div>
-          {this.props.permissions.indexOf("add_project") !== -1 ? 
-          <div className="text-right add-button">
-             <button type="button" 
-                    className="btn btn-primary btn-sm"
-                    onClick={this.handleAddProject}>
-              <i className="glyphicon glyphicon-plus"></i>
-              {_("Add Project")}
-            </button>
-          </div> : ""}
+          <div className="text-right add-button" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+            <div>
+              <button type="button" 
+                      className="btn btn-default btn-sm"
+                      onClick={this.handleConvertLAS}
+                      title={_("Convert LAS/LAZ file to images")}>
+                <i className="fa fa-cube"></i> {_("Convert LAS")}
+              </button>
+            </div>
+            {this.props.permissions.indexOf("add_project") !== -1 ? 
+            <div>
+               <button type="button" 
+                      className="btn btn-primary btn-sm"
+                      onClick={this.handleAddProject}>
+                <i className="glyphicon glyphicon-plus"></i>
+                {_("Add Project")}
+              </button>
+            </div> : ""}
+          </div>
+
+          {this.state.showLASConversion ? 
+            <div className="las-conversion-wrapper theme-background-highlight" style={{padding: '15px', marginBottom: '15px', borderRadius: '4px'}}>
+              <button type="button" className="close theme-color-primary" title={_("Close")} onClick={this.handleCloseLASConversion}>
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <LASConversionPanel />
+            </div>
+          : ""}
 
           <EditProjectDialog 
             saveAction={this.addNewProject}

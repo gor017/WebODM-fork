@@ -14,6 +14,7 @@ from .potree import Scene, CameraView
 from .workers import CheckTask, GetTaskResult
 from .users import UsersList
 from .externalauth import ExternalTokenAuth
+from .lasconversion import LASConversionView, LASConversionDownloadView
 from webodm import settings
 
 router = routers.DefaultRouter()
@@ -57,6 +58,9 @@ urlpatterns = [
 
     url(r'workers/check/(?P<celery_task_id>.+)', CheckTask.as_view()),
     url(r'workers/get/(?P<celery_task_id>.+)', GetTaskResult.as_view()),
+
+    url(r'^las-convert/$', LASConversionView.as_view()),
+    url(r'^las-convert/download/(?P<temp_dir>[^/]+)/(?P<filename>.+)$', LASConversionDownloadView.as_view()),
 
     url(r'^auth/', include('rest_framework.urls')),
     url(r'^token-auth/', obtain_jwt_token),
