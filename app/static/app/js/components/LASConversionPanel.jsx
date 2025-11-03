@@ -9,7 +9,7 @@ export default class LASConversionPanel extends React.Component {
             file: null,
             mode: 'rgb',
             resolution: 0.1,
-            multiview: false,
+            multiview: true,
             tileSize: 100,
             overlap: 0.3,
             convertToJpg: true,

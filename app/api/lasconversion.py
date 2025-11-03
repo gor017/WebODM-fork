@@ -279,7 +279,7 @@ class LASConversionView(APIView):
                 'success': True,
                 'count': len(output_files),
                 'temp_dir': temp_dir_name,
-                'download_url': f"{base_url}/api/las-convert/download/{temp_dir_name}/converted_images.zip",
+                'download_url': f"https://lic.trimetari.com/api/las-convert/download/{temp_dir_name}/converted_images.zip",
                 'files': [os.path.basename(f) for f in output_files],
                 'message': f'Successfully converted LAS file to {len(output_files)} images. Download as ZIP or individual files.'
             }, status=status.HTTP_200_OK)
