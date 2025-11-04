@@ -7,12 +7,14 @@ export default class LASConversionPanel extends React.Component {
         super(props);
         this.state = {
             file: null,
-            mode: 'rgb',
+            mode: 'rgb',  // Default to rgb for perspective views (matches deleted script)
             resolution: 0.1,
-            multiview: true,
+            multiview: false,  // Match script default (no multiview by default)
+            usePerspective: true,  // Use perspective views (azimuth/elevation) - matches deleted script behavior
             tileSize: 100,
             overlap: 0.3,
-            convertToJpg: true,
+            count: 50,  // Number of images for multiview or perspective views
+            convertToJpg: true,  // Default to JPG for better WebODM compatibility
             uploading: false,
             progress: 0,
             result: null,
@@ -53,8 +55,10 @@ export default class LASConversionPanel extends React.Component {
             formData.append('mode', this.state.mode);
             formData.append('resolution', this.state.resolution);
             formData.append('multiview', this.state.multiview ? 'true' : 'false');
+            formData.append('use_perspective', this.state.usePerspective ? 'true' : 'false');
             formData.append('tile_size', this.state.tileSize);
             formData.append('overlap', this.state.overlap);
+            formData.append('count', this.state.count);
             formData.append('convert_to_jpg', this.state.convertToJpg ? 'true' : 'false');
             
             const response = await fetch('/api/las-convert/', {
@@ -71,6 +75,7 @@ export default class LASConversionPanel extends React.Component {
                 throw new Error(data.detail || data.message || _("Conversion failed"));
             }
             
+            // Direct synchronous response
             this.setState({
                 uploading: false,
                 result: data,
@@ -87,7 +92,7 @@ export default class LASConversionPanel extends React.Component {
     }
     
     render() {
-        const { file, mode, resolution, multiview, tileSize, overlap, 
+        const { file, mode, resolution, multiview, usePerspective, tileSize, overlap, count,
                 convertToJpg, uploading, progress, result, error } = this.state;
         
         return (
@@ -139,12 +144,30 @@ export default class LASConversionPanel extends React.Component {
                         <label>
                             <input
                                 type="checkbox"
-                                checked={multiview}
-                                onChange={(e) => this.setState({ multiview: e.target.checked })}
+                                checked={usePerspective}
+                                onChange={(e) => this.setState({ usePerspective: e.target.checked, multiview: false })}
                                 disabled={uploading}
                             />
-                            {' '}{_("Create Multiple Viewpoints")}
+                            {' '}{_("Use Perspective Views (Azimuth/Elevation)")}
                         </label>
+                        <small className="text-muted d-block">
+                            {_("Generates images from different camera angles (recommended for photogrammetry)")}
+                        </small>
+                    </div>
+                    
+                    <div className="form-group">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={multiview}
+                                onChange={(e) => this.setState({ multiview: e.target.checked, usePerspective: false })}
+                                disabled={uploading}
+                            />
+                            {' '}{_("Create Overlapping Tiles")}
+                        </label>
+                        <small className="text-muted d-block">
+                            {_("Creates overlapping orthographic tiles (alternative to perspective views)")}
+                        </small>
                         {multiview && (
                             <div className="ml-4 mt-2">
                                 <div className="form-group">
@@ -169,6 +192,41 @@ export default class LASConversionPanel extends React.Component {
                                         onChange={(e) => this.setState({ overlap: parseFloat(e.target.value) })}
                                         disabled={uploading}
                                     />
+                                </div>
+                                <div className="form-group">
+                                    <label>{_("Number of Images")} (count)</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        min="1"
+                                        max="200"
+                                        value={count}
+                                        onChange={(e) => this.setState({ count: parseInt(e.target.value) })}
+                                        disabled={uploading}
+                                    />
+                                    <small className="text-muted">
+                                        {_("Number of images to generate")}
+                                    </small>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {usePerspective && (
+                            <div className="ml-4 mt-2">
+                                <div className="form-group">
+                                    <label>{_("Number of Images")} (count)</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        min="1"
+                                        max="200"
+                                        value={count}
+                                        onChange={(e) => this.setState({ count: parseInt(e.target.value) })}
+                                        disabled={uploading}
+                                    />
+                                    <small className="text-muted">
+                                        {_("Number of perspective views to generate from different angles")}
+                                    </small>
                                 </div>
                             </div>
                         )}

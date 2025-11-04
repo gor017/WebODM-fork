@@ -230,6 +230,72 @@ def export_raster(self, input, **opts):
         return {'error': str(e)}
 
 @app.task(bind=True, time_limit=settings.WORKERS_MAX_TIME_LIMIT)
+def convert_las_to_images_task(self, las_path, output_dir, resolution=0.1, mode='rgb',
+                               multiview=False, tile_size=100, overlap=0.3, count=30, convert_to_jpg=True):
+    """
+    Background task to convert LAS/LAZ files to images.
+    """
+    try:
+        logger.info(f"Converting LAS file {las_path} to images")
+        
+        # Import conversion function
+        from app.api.lasconversion import convert_las_to_images, convert_tifs_to_jpgs
+        import zipfile
+        import os
+        from pathlib import Path
+        
+        # Update progress
+        self.update_state(state="PROGRESS", meta={"status": "Converting LAS to images...", "progress": 10})
+        
+        # Create output directories
+        tif_dir = os.path.join(output_dir, 'tif')
+        jpg_dir = os.path.join(output_dir, 'jpg')
+        
+        # Convert LAS to images
+        self.update_state(state="PROGRESS", meta={"status": "Rasterizing point cloud...", "progress": 20})
+        success, tif_files, error = convert_las_to_images(
+            las_path, tif_dir, resolution, mode, multiview, tile_size, overlap, count
+        )
+        
+        if not success:
+            return {'error': f"Conversion failed: {error}"}
+        
+        # Convert TIF to JPG if requested
+        output_files = tif_files
+        if convert_to_jpg:
+            self.update_state(state="PROGRESS", meta={"status": "Converting to JPEG...", "progress": 70})
+            jpg_success, jpg_files, jpg_error = convert_tifs_to_jpgs(tif_dir, jpg_dir)
+            if jpg_success:
+                output_files = jpg_files
+            else:
+                logger.warning(f"TIF to JPG conversion had issues: {jpg_error}")
+        
+        # Create zip file
+        self.update_state(state="PROGRESS", meta={"status": "Creating ZIP archive...", "progress": 90})
+        zip_path = os.path.join(output_dir, 'converted_images.zip')
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file_path in output_files:
+                if os.path.exists(file_path):
+                    zipf.write(file_path, os.path.basename(file_path))
+        
+        self.update_state(state="PROGRESS", meta={"status": "Complete", "progress": 100})
+        
+        return {
+            'file': zip_path,
+            'output': {
+                'success': True,
+                'count': len(output_files),
+                'files': [os.path.basename(f) for f in output_files],
+                'temp_dir': os.path.basename(output_dir)
+            }
+        }
+    except Exception as e:
+        logger.error(f"LAS conversion task error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {'error': str(e)}
+
+@app.task(bind=True, time_limit=settings.WORKERS_MAX_TIME_LIMIT)
 def export_pointcloud(self, input, **opts):
     try:
         logger.info("Exporting point cloud {} with options: {}".format(input, json.dumps(opts)))
